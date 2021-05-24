@@ -17,8 +17,9 @@
 
 ## 生成物
 exeファイルと同じディレクトリに以下が生成されます．  
+- `filename`.txt：整形済みの英語論文
+- `filename`\_unshaped.txt：未整形の英語論文
+- `filename`\_translated.txt：`filename`.txtをGoogle翻訳にかけたもの
+
 同名のファイルは上書きされるのでご注意ください．  
 特に，モード1を実行したのちに手動で整形した`filename`.txt は別名で保存することを推奨します
-- `filename`.txt：整形済みの英語論文のtxtファイル
-- `filename`\_unshaped.txt：未整形の英語論文のtxtファイル
-- `filename`\_translated.txt：`filename`.txtをGoogle翻訳にかけたもの
