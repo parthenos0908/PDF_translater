@@ -1,9 +1,9 @@
-# PDF_translater
+# PDF_translator
 
-**PDF_translater**は英語論文のpdfファイルを入力として，txtに変換・文章の整形・翻訳を行うツールです
+**PDF_translator**は英語論文のpdfファイルを入力として，txtに変換・文章の整形・翻訳を行うツールです
 
 ## 使い方
-1. [PDF_translater.exe](https://github.com/parthenos0908/PDF_translater/raw/main/PDF_translater.exe)をダウンロードします
+1. [PDF_translator.exe](https://github.com/parthenos0908/PDF_translator/raw/main/PDF_translator.exe)をダウンロードします
 2. exeファイルと翻訳したい英語論文のpdfファイルを同じディレクトリに配置します
 3. exeファイルを実行します
 
