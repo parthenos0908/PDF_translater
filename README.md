@@ -9,7 +9,7 @@
 
 ## モード
 0. **PDF → txt**  
-英語論文のpdfファイル入力し，整形したtxtファイルに変換します
+英語論文のpdfファイルを入力し，整形したtxtファイルに変換します
 1. **txt → translated_txt**  
 英語のtxtファイルを入力し，日本語のtxtファイルに翻訳します
 2. **PDF → txt → translated_txt** (非推奨)  
