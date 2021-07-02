@@ -173,11 +173,31 @@ def main():
         filename = input('txtファイル名を入力してください（拡張子不要）: ')
         try:
             with open(path + "/" + filename + ".txt", "r", encoding="utf-8") as f_input_text:
-                texts = f_input_text.readlines()
+                input_texts = f_input_text.readlines()
         except:
             print("ファイルが見つかりません")
             print("注意) txtファイルはexeファイルと同じディレクトリに配置してください")
             sys.exit()
+
+        # １行ずつだと翻訳時間が長いので，文字数上限を超えないようにまとめる
+        MAX_char = 3000
+        texts = []
+        block = ""
+        for text in input_texts:
+            if len(text) > MAX_char:
+                if block != "":
+                    texts.append(block)
+                    block = ""
+                texts.append(text)
+                continue
+            tmp = block + text
+            if len(tmp) > MAX_char:
+                texts.append(block)
+                block = text
+            else:
+                block = tmp
+        texts.append(block)
+
 
     if mode in [1, 2]:
         f_trans = open(path + "/" + filename +
