@@ -1,14 +1,22 @@
-import argparse
 import requests
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import TextConverter
 from pdfminer.layout import LAParams
 from pdfminer.pdfpage import PDFPage
 from io import StringIO
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+from bs4 import BeautifulSoup
 import re
 import os
 import sys
 import time
+import urllib.parse
+import chromedriver_binary
 
 
 def is_float(n):
@@ -28,6 +36,7 @@ def get_text_from_pdf(filepath, pdfname, limit=1000):
     except:
         print("ファイルが見つかりません")
         print("注意) PDFファイルはexeファイルと同じディレクトリに配置してください")
+        time.sleep(1)
         sys.exit()
 
     # PDFからテキストの抽出
@@ -77,9 +86,9 @@ def get_text_from_pdf(filepath, pdfname, limit=1000):
     # 分割した行でループ
     for line in lines:
 
-        # tmp = line
-        # print(tmp)
-        # time.sleep(0.5)
+        # 余分な文字を除去する
+        for c in replace_char_dict:
+            line = line.replace(c, replace_char_dict[c])
 
         # byte文字列に変換
         line_utf8 = line.encode('utf-8')
@@ -90,9 +99,6 @@ def get_text_from_pdf(filepath, pdfname, limit=1000):
 
         # strに戻す
         line = line_utf8.decode()
-
-        for c in replace_char_dict:
-            line = line.replace(c, replace_char_dict[c])
 
         # 連続する空白を一つにする
         line = re.sub("[ ]+", " ", line)
@@ -138,7 +144,7 @@ def get_text_from_pdf(filepath, pdfname, limit=1000):
     return outputs
 
 
-def translate(text):
+def translate_google(text):
     if text:
         pass
     else:
@@ -154,6 +160,46 @@ def translate(text):
     return r_post.json()['text']
 
 
+def translate_deepl(from_text, from_lang="en", to_lang="ja", sleep_time=1, try_max_count=30):
+    url = 'https://www.deepl.com/translator#' + from_lang + '/' + to_lang
+
+    #　ヘッドレスモードでブラウザを起動
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--user-agent=Mozilla/5.0')
+
+    # ブラウザーを起動
+    driver = webdriver.Chrome(options=options)
+    driver.get(url)
+    driver.implicitly_wait(20)  # 見つからないときは、20秒まで待つ
+    textarea = driver.find_element_by_css_selector(
+        '.lmt__textarea.lmt__source_textarea.lmt__textarea_base_style')  # deeplのtextボックス
+    textarea.send_keys(from_text)
+
+    # 入力文字列の末尾の改行を保持(翻訳結果で消されるため)
+    match = re.search(r'\n+$', from_text)
+    end_newline = ""
+    if match:
+        end_newline = match.group()
+
+    for i in range(try_max_count):
+        time.sleep(sleep_time)
+        html = driver.page_source
+        to_text = get_text_from_page_source(html)
+        if to_text:
+            break
+    driver.quit()  # ブラウザ停止
+    return to_text + end_newline
+
+
+def get_text_from_page_source(html):
+    soup = BeautifulSoup(html, features="html.parser")
+    # deeplの翻訳結果出力(<div id="source-dummydiv" class="lmt__textarea lmt__textarea_dummydiv">はうまくいかず)
+    target_elem = soup.find(class_="lmt__translations_as_text__text_btn")
+    text = target_elem.text
+    return text
+
+
 def main():
     mode = input(
         'モードを選択してください\n 0. PDF → txt\n 1. txt → taranslated_txt\n 2. PDF → txt → taranslated_txt\nplease enter a number : ')
@@ -161,6 +207,7 @@ def main():
         mode = int(mode)
     else:
         print("未定義の入力です")
+        time.sleep(1)
         sys.exit()
 
     # os.path.dirname(__file__)だとexe化した時にうまく動かない
@@ -177,6 +224,7 @@ def main():
         except:
             print("ファイルが見つかりません")
             print("注意) txtファイルはexeファイルと同じディレクトリに配置してください")
+            time.sleep(1)
             sys.exit()
 
         # １行ずつだと翻訳時間が長いので，文字数上限を超えないようにまとめる
@@ -198,7 +246,6 @@ def main():
                 block = tmp
         texts.append(block)
 
-
     if mode in [1, 2]:
         f_trans = open(path + "/" + filename +
                        '_translate.txt', "w", encoding="utf-8")
@@ -207,12 +254,16 @@ def main():
     # 一定文字列で分割した文章毎にAPIを叩く
     for i, text in enumerate(texts):
         # 結果をファイルに出力
-        if(mode != 1):
+        if mode in [0, 2]:
             f_text.write(text)
-        if(mode != 0):
+        if mode in [1, 2]:
             print(
                 "[taranslate : {0}/{1} is proccessing]".format((i+1), len(texts)))
-            text_translate = translate(text)
+            # text_translate = translate_deepl(text)
+            text_translate = translate_google(text)
+            print(text)
+            print("----------")
+            print(text_translate)
             f_trans.write(text_translate)
             time.sleep(1)  # google翻訳のエラー回避
 
